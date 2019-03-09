@@ -215,23 +215,28 @@ These are basically read only ssh keys."))
 ;;; Collaborators
 (defgeneric show-collaborators (username repository &key login token)
   (:documentation "List collaborators on REPOSITORY owned by USERNAME."))
-(defgeneric remove-collaborator (username repository &key login token)
+(defgeneric remove-collaborator (owner repository username &key login token)
   (:documentation "Remove USERNAME from the collaborators list of REPOSITORY."))
-(defgeneric add-collaborator (username repository &key login token)
+(defgeneric add-collaborator (owner repository username &key login token)
   (:documentation "Add USERNAME to the collaborators list of REPOSITORY."))
 
 (defmethod show-collaborators ((username string) (repository string)
                                &key login token)
-  (json->list (request login token `("repos" "show" ,username
-                                                    ,repository "collaborators"))))
-(defmethod add-collaborator ((username string) (repository string) &key login token)
-  (json->list
-   (authed-request login token `("repos" "collaborators" ,repository
-                                         "add" ,username))))
-(defmethod remove-collaborator ((username string) (repository string) &key login token)
-  (json->list
-   (authed-request login token `("repos" "collaborators" ,repository
-                                         "remove" ,username))))
+  (json->list (request login token `("repos" ,username ,repository
+                                     "collaborators"))))
+(defmethod add-collaborator ((owner string)
+                             (repository string)
+                             (username string) &key login token)
+  (json->list (authed-request login token
+                              `("repos" ,owner ,repository "collaborators" ,username)
+                              :headers '(("Content-Length" . "0"))
+                              :method :put)))
+(defmethod remove-collaborator ((owner string)
+                                (repository string)
+                                (username string) &key login token)
+  (json->list (authed-request login token
+                              `("repos" ,owner ,repository "collaborators" ,username)
+                              :method :delete)))
 
 
 ;;; Repository refs stuff

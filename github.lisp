@@ -1,12 +1,12 @@
 (in-package :cl-github)
 
-(defparameter +github-api-url+ "http://github.com/api/v2/json"
+(defparameter +github-api-url+ "http://api.github.com"
   ;; Use only the json interface, we do not want to implement the xml or
   ;; yaml interfaces.
   "Github api location.
 This is the same for every call.")
 
-(defparameter +github-ssl-api-url+ "https://github.com/api/v2/json"
+(defparameter +github-ssl-api-url+ "https://api.github.com"
   ;; Use only the json interface, we do not want to implement the xml or
   ;; yaml interfaces.
   "Github api location.
@@ -33,8 +33,8 @@ This is the same for every call.")
       (close result))))
 
 (defun github-request (&rest args
-                       &key login token auth base-url
-                       parameters method want-string &allow-other-keys)
+                       &key login token auth base-url parameters method
+                       want-string headers &allow-other-keys)
   (let ((login (or login (and (member auth '(:default :force)) *default-login*)))
         (token (or token (and (member auth '(:default :force)) *default-token*)))
         (base-url (or base-url (if (and login token)
@@ -46,11 +46,12 @@ This is the same for every call.")
     (with-github-content-types
       (drakma:http-request (apply #'build-github-api-url
                                   base-url parameters)
-                           :method (or method (if (and login token) :post :get))
+                           :method (or method :get)
                            :REDIRECT t
                            :want-stream (if want-string nil t)
+                           :additional-headers (or headers '())
                            :parameters
-                           (apply #'build-parameters :login login :token token
+                           (apply #'build-parameters :login login :access-token token
                                   args)))))
 
 (defun request (login token uri-parameters &rest args &key
@@ -83,7 +84,8 @@ This is the same for every call.")
           (when (and value (not (eq :parameters key))
                      (not (eq :auth key))
                      (not (eq :method key))
-                     (not (eq :want-string key)))
+                     (not (eq :want-string key))
+                     (not (eq :headers key)))
             (collect (cons (dash-to-underscore
                             (string-downcase (symbol-name key))) value))))))
 

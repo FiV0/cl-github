@@ -63,11 +63,11 @@
   (:documentation "Unfollow USERNAME using LOGIN."))
 
 (defmethod show-followers ((username string))
-  (json->list (github-simple-request "user" "show" username "followers")))
+  (json->list (github-simple-request "users" username "followers")))
 (defmethod show-following ((username string))
-  (json->list (github-simple-request "user" "show" username "following")))
+  (json->list (github-simple-request "users" username "following")))
 (defmethod follow ((username string) &key login token)
-  (json->list (authed-request login token `("user" "follow" ,username))))
+  (json->list (authed-request login token `("user" "following" ,username))))
 (defmethod unfollow ((username string) &key login token)
   ;; Github seems to ignore this request.
   (json->list (authed-request login token `("user" "unfollow" ,username))))

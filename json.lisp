@@ -217,6 +217,11 @@ Otherwise, create a FLUID-OBJECT with slots interned in
     (close obj)))
 
 (defgeneric json->alist (object))
+(defmethod json->alist :around ((object stream))
+  (handler-case (call-next-method)
+    (end-of-file (e)
+      (declare (ignore e))
+      '())))
 (defmethod json->alist ((object stream))
   (with-decoder-simple-list-semantics
     (decode-json object)))
@@ -229,14 +234,24 @@ Otherwise, create a FLUID-OBJECT with slots interned in
                 object
                 (list object))))
 (defgeneric json->list (object))
+(defmethod json->list :around ((object stream))
+  (handler-case (call-next-method)
+    (end-of-file (e)
+      (declare (ignore e))
+      '())))
 (defmethod json->list ((object stream))
-  (ensure-list (cdar (with-simple-alist-decoder
-                       (decode-json object)))))
+  (ensure-list (with-simple-alist-decoder
+                 (decode-json object))))
 (defmethod json->list :after ((object stream))
   (close object))
 
 (defgeneric json->element (object)
   (:documentation "Return first element of OBJECT's json conversion result."))
+(defmethod json->element :around ((object stream))
+  (handler-case (call-next-method)
+    (end-of-file (e)
+      (declare (ignore e))
+      '())))
 (defmethod json->element ((object stream))
   (car (json->list object)))
 

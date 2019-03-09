@@ -14,8 +14,8 @@
    ;; Following people related.
    #:show-followers
    #:show-following
-   #:follow
-   #:unfollow                           ;currently not working github side.
+   #:follow ; not working
+   #:unfollow ; nor working
 
    ;; Project collaborators
    #:show-collaborators
