@@ -39,7 +39,8 @@ This is the same for every call.")
         (token (or token (and (member auth '(:default :force)) *default-token*)))
         (base-url (or base-url (if (and login token)
                                    +github-ssl-api-url+
-                                   +github-api-url+))))
+                                   +github-api-url+)))
+        (content-method (member method '(:post :delete))))
     (when (eq :force auth)
       (check-type login string)
       (check-type token string))
@@ -49,10 +50,22 @@ This is the same for every call.")
                            :method (or method :get)
                            :REDIRECT t
                            :want-stream (if want-string nil t)
-                           :additional-headers (or headers '())
+                           :additional-headers
+                           (or (when content-method
+                                 (cons `("Authorization" .
+                                        ,(concatenate 'string "token " token))
+                                       headers))
+                               headers)
+                           :content
+                           (when content-method
+                             (json:encode-json-to-string
+                               (apply #'build-parameters :login login
+                                      :access-token token args)))
                            :parameters
-                           (apply #'build-parameters :login login :access-token token
-                                  args)))))
+                           (when (not content-method)
+                            (apply #'build-parameters :login login
+                                   :access-token token args))
+                           ))))
 
 (defun request (login token uri-parameters &rest args &key
                 &allow-other-keys)

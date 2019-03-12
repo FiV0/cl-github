@@ -27,6 +27,7 @@
    #:add-user-email
    #:remove-user-email
 
+   ;; TODO below nothing yet moved to v3
    ;; User keys
    #:user-keys
    #:add-user-key
