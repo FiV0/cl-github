@@ -33,7 +33,7 @@ This is the same for every call.")
       (close result))))
 
 (defun github-request (&rest args
-                       &key login token auth base-url parameters method
+                       &key login token auth base-url full-url parameters method
                        want-string headers &allow-other-keys)
   (let ((login (or login (and (member auth '(:default :force)) *default-login*)))
         (token (or token (and (member auth '(:default :force)) *default-token*)))
@@ -45,8 +45,9 @@ This is the same for every call.")
       (check-type login string)
       (check-type token string))
     (with-github-content-types
-      (drakma:http-request (apply #'build-github-api-url
-                                  base-url parameters)
+      (drakma:http-request (or full-url (apply #'build-github-api-url
+                                               base-url parameters))
+                           :preserve-uri full-url
                            :method (or method :get)
                            :REDIRECT t
                            :want-stream (if want-string nil t)
@@ -64,8 +65,7 @@ This is the same for every call.")
                            :parameters
                            (when (not content-method)
                             (apply #'build-parameters :login login
-                                   :access-token token args))
-                           ))))
+                                   :access-token token args))))))
 
 (defun request (login token uri-parameters &rest args &key
                 &allow-other-keys)
@@ -98,6 +98,7 @@ This is the same for every call.")
                      (not (eq :auth key))
                      (not (eq :method key))
                      (not (eq :want-string key))
+                     (not (eq :full-url key))
                      (not (eq :headers key)))
             (collect (cons (dash-to-underscore
                             (string-downcase (symbol-name key))) value))))))

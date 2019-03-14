@@ -27,6 +27,10 @@
    #:add-user-email
    #:remove-user-email
 
+   ;; repository search
+   #:search-repositories
+   #:show-user-repositories
+
    ;; TODO below nothing yet moved to v3
    ;; User keys
    #:user-keys

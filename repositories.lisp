@@ -112,22 +112,62 @@ slots."))
   (:documentation "Token github gives us to confirm deletion."))
 
 ;;; Repository meta information stuff
-(defgeneric search-repositories (search-string)
-  (:documentation "Search github repositories for SEARCH-STRING."))
+(defgeneric search-repositories (search-string language &optional reinit)
+  (:documentation "Search github repositories for SEARCH-STRING in LANGUAGE. If
+                  more than a 100 results are found, the method will return the
+                  next results on subsequent calls until none are found in which
+                  case NIL is returned. If REINIT is none NIL the memoized
+                  results will be cleared."))
 (defgeneric show-repository (username reponame &key login token)
   (:documentation "Show information on USERNAME's REPONAME."))
 (defgeneric show-user-repositories (username)
   (:documentation "List USERNAME's repositories."))
 
+;; TODO move this to drakma url-encoder or use the url-utils.lisp file.
+  ;;(let ((st (url-replace-spaces search-string))
+        ;;(lang (url-replace-spaces language)))
+(defun construct-searchquery (search-string language)
+  (let ((st search-string)
+        (lang language))
+   (cond ((eq st "") (concatenate 'string "language:" lang))
+         ((eq lang "") st)
+         (t (concatenate 'string st " language:" lang)))))
 
-(defmethod search-repositories ((search-string string))
-  (to-json (github-simple-request "repos" "search" search-string)))
+(let ((ht (make-hash-table :test #'equal))) ; TODO use FARE-MEMOIZATION
+  (defmethod search-repositories ((search-string string)
+                                  (language string)
+                                  &optional reinit)
+    (let ((searchquery (construct-searchquery search-string language)))
+      (when reinit (remhash searchquery ht))
+      (multiple-value-bind (nexturl exists) (gethash searchquery ht)
+        (unless (and exists (not nexturl))
+          (slot-value ;TODO remove this hack and convert to a correct object
+            (to-json
+              (multiple-value-bind (body status headers)
+                (if exists
+                  (github-request :full-url nexturl)
+                  (github-request
+                    :parameters '("search" "repositories")
+                    :q (concatenate 'string search-string " language:" language)
+                    :per_page "2"))
+                ;(declare (ignore status)) ;TODO do error handling
+                (print (assoc :link headers))
+                (if (assoc :link headers)
+                  (setf (gethash searchquery ht)
+                        (cdr (assoc "next" (parse-link-header
+                                             (cdr (assoc :link headers)))
+                                    :test #'string=)))
+                  (setf (gethash searchquery ht) nil))
+                (print (gethash searchquery ht))
+                body))
+            'items))))))
+
 (defmethod show-repository ((username string) (repository string) &key login token)
   (if (equalp username login)
       (to-json (authed-request login to-json (list "repos" "show" username repository)))
       (to-json (github-simple-request "repos" "show" username repository))))
 (defmethod show-user-repositories ((username string))
-  (to-json (github-simple-request "repos" "show" username)))
+  (to-json (github-simple-request "users" username "repos")))
 
 ;;; Watch/unwatch
 (defgeneric watch (username repository &key login token)

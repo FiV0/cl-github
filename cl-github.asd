@@ -8,7 +8,7 @@
 (defsystem :cl-github
   :version "0.2.0"
   :license "BSD"
-  :depends-on (:iterate :drakma :cl-json :eos)
+  :depends-on (:iterate :drakma :cl-json :eos :cl-strings)
   :serial t
   :components
   ((:file "package")
@@ -18,6 +18,7 @@
    (:file "issues")
    (:file "json")
    (:file "github")
-   (:file "network")))                    ;Needs COMMITS and USERS.
+   (:file "network")
+   (:file "utils")))                    ;Needs COMMITS and USERS.
 
 ;;; end
