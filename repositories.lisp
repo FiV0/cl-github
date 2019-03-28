@@ -129,8 +129,8 @@ slots."))
 (defun construct-searchquery (search-string language)
   (let ((st search-string)
         (lang language))
-   (cond ((eq st "") (concatenate 'string "language:" lang))
-         ((eq lang "") st)
+   (cond ((equal st "") (concatenate 'string "language:" lang))
+         ((equal lang "") st)
          (t (concatenate 'string st " language:" lang)))))
 
 (let ((ht (make-hash-table :test #'equal))) ; TODO use FARE-MEMOIZATION
@@ -148,10 +148,9 @@ slots."))
                   (github-request :full-url nexturl)
                   (github-request
                     :parameters '("search" "repositories")
-                    :q (concatenate 'string search-string " language:" language)
+                    :q (construct-searchquery search-string language)
                     :per_page "2"))
                 ;(declare (ignore status)) ;TODO do error handling
-                (print (assoc :link headers))
                 (if (assoc :link headers)
                   (setf (gethash searchquery ht)
                         (cdr (assoc "next" (parse-link-header
